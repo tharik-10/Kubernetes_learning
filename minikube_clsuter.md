@@ -1,56 +1,107 @@
-🧩 Setup Kubernetes (Minikube) on Ubuntu 24.04 EC2 with Nginx Deployment
+# 🧩 Setup Kubernetes (Minikube) on Ubuntu 24.04 EC2 with Nginx Deployment
 
-This guide explains how to set up a Kubernetes cluster using Minikube on an Ubuntu 24.04 EC2 instance, deploy an Nginx application, and access it via a browser or curl.
+This guide explains how to set up a **Kubernetes cluster using Minikube** on an **Ubuntu 24.04 EC2 instance**, deploy an **Nginx application**, and access it via a browser or `curl`.
 
-1️⃣ Pre-requisites
+---
+
+## 1️⃣ Pre-requisites
 
 Ensure you have the following before starting:
 
-Ubuntu 24.04 EC2 instance
+- Ubuntu 24.04 EC2 instance  
+- `sudo` access  
+- Internet connectivity  
+- AWS Security Group configured to allow required ports (NodePort range: **30000–32767**)
 
-sudo access
+---
 
-Internet connectivity
+## 2️⃣ Install Docker
 
-AWS Security Group configured to allow required ports (NodePort range: 30000–32767)
-
-2️⃣ Install Docker
+```bash
 sudo apt update
 sudo apt install -y docker.io
 sudo systemctl enable docker --now
 sudo usermod -aG docker $USER
 newgrp docker
+```
 
-✅ Test Docker
+✅ **Verify Docker:**
+
+```bash
 docker run hello-world
+```
 
-3️⃣ Install kubectl
-curl -fsSL https://dl.k8s.io/release/stable.txt | xargs -I{} curl -LO "https://dl.k8s.io/release/{}/bin/linux/amd64/kubectl"
+---
+
+## 3️⃣ Install `kubectl`
+
+```bash
+curl -fsSL https://dl.k8s.io/release/stable.txt | xargs -I {} curl -LO "https://dl.k8s.io/release/{}/bin/linux/amd64/kubectl"
 sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 kubectl version --client --short
+```
 
-4️⃣ Install Minikube
+---
+
+## 4️⃣ Install Minikube
+
+```bash
 curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
 sudo install minikube-linux-amd64 /usr/local/bin/minikube
 minikube version
+```
 
-5️⃣ Start Minikube Cluster (with Docker Driver)
+---
+
+## 5️⃣ Start Minikube Cluster (with Docker Driver)
+
+```bash
 minikube start --driver=docker
+```
 
-🧠 Verify Cluster
+> 🟢 This command initializes a single-node Kubernetes cluster inside Docker.
+
+---
+
+## 6️⃣ Verify Cluster
+
+```bash
 minikube status
 kubectl get nodes
+```
 
-6️⃣ Deploy Nginx in Kubernetes
-Option A — Imperative Method
-kubectl create deployment nginx --image=nginx:stable
+You should see a node with the status **Ready**.
+
+---
+
+## 7️⃣ Deploy Nginx in Kubernetes
+
+You can deploy Nginx using either **Imperative** or **Declarative** method.
+
+---
+
+### 🅰️ Option A — Imperative Method
+
+```bash
+kubectl create deployment nginx --image=nginx
 kubectl scale deployment nginx --replicas=1
 kubectl expose deployment nginx --type=NodePort --port=80 --name=nginx-svc
+```
 
-Option B — Declarative Method
+Check deployment and service:
 
-Create a file named nginx-deploy.yaml:
+```bash
+kubectl get pods
+kubectl get svc
+```
 
+---
+
+### 🅱️ Option B — Declarative Method
+
+Create a file named **nginx-deployment.yaml** and add the following content:
+
+```yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -66,11 +117,15 @@ spec:
         app: nginx
     spec:
       containers:
-      - name: nginx
-        image: nginx:stable
-        ports:
-        - containerPort: 80
----
+        - name: nginx
+          image: nginx:stable
+          ports:
+            - containerPort: 80
+```
+
+Then, create a service definition file named **nginx-service.yaml**:
+
+```yaml
 apiVersion: v1
 kind: Service
 metadata:
@@ -82,54 +137,93 @@ spec:
     - protocol: TCP
       port: 80
       targetPort: 80
+      nodePort: 30080
   type: NodePort
+```
 
+Apply both:
 
-Apply it:
+```bash
+kubectl apply -f nginx-deployment.yaml
+kubectl apply -f nginx-service.yaml
+```
 
-kubectl apply -f nginx-deploy.yaml
+---
 
-7️⃣ Get NodePort to Access Nginx
+## 8️⃣ Get NodePort to Access Nginx
+
+```bash
 kubectl get svc nginx-svc
-
+```
 
 Example Output:
+```
+NAME         TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)        AGE
+nginx-svc    NodePort   10.96.120.45    <none>        80:30080/TCP   1m
+```
 
-NAME        TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)        AGE
-nginx-svc   NodePort   10.107.28.99    <none>        80:31234/TCP   1m
+Access it using:
 
+```bash
+curl http://<EC2-PUBLIC-IP>:30080
+```
 
-➡️ Here, 31234 is the NodePort.
+Or open in browser:
+```
+http://<EC2-PUBLIC-IP>:30080
+```
 
-8️⃣ Access Nginx Application
-Step 1: Allow Port in AWS Security Group
+---
 
-Allow inbound traffic on the NodePort (e.g., 31234) from your IP.
+## 9️⃣ Access Using Minikube Command
 
-Step 2: Get EC2 Public IP
-curl http://checkip.amazonaws.com
+Alternatively, you can use:
 
-Step 3: Access in Browser or via Curl
-curl http://<EC2_PUBLIC_IP>:<NODE_PORT>
+```bash
+minikube service nginx-svc --url
+```
 
+---
 
-You should see the default Nginx HTML page.
+## 🔍 Verify Deployment
 
-9️⃣ Useful Kubernetes Commands
+```bash
 kubectl get all
 kubectl describe deployment nginx
-kubectl logs -l app=nginx
+kubectl logs -f <nginx-pod-name>
+```
 
-🔟 Clean Up Resources
+---
+
+## 🧹 Cleanup
+
+To delete all resources and stop Minikube:
+
+```bash
 kubectl delete svc nginx-svc
 kubectl delete deployment nginx
 minikube stop
 minikube delete
+```
 
-📘 Summary
-Component	Purpose
-Docker	Container runtime used by Minikube
-kubectl	CLI to interact with Kubernetes
-Minikube	Creates a local single-node Kubernetes cluster
-Nginx	Web server deployed as a test workload
-NodePort Service	Exposes Nginx externally via EC2 public IP
+---
+
+## 🏁 Summary
+
+You have successfully:
+
+✅ Installed Docker  
+✅ Installed `kubectl` and Minikube  
+✅ Created and started a Minikube cluster  
+✅ Deployed Nginx using both Imperative and Declarative methods  
+✅ Exposed it externally using NodePort  
+✅ Accessed Nginx via EC2 Public IP 🎉
+
+---
+
+📘 **Next Steps:**
+- Explore Ingress setup  
+- Try scaling deployments  
+- Use ConfigMaps and Secrets for environment management  
+- Integrate with CI/CD pipeline (Jenkins or GitHub Actions)
+
