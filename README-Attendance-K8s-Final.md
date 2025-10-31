@@ -73,21 +73,8 @@ systemctl status containerd
 
 Create a dedicated namespace for isolation.
 
-**namespace.yaml**
-```yaml
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: attendance-prod
-```
-
-Apply:
 ```bash
-kubectl apply -f namespace.yaml
-```
-
-Verify:
-```bash
+kubectl create namespace attendance-prod
 kubectl get ns
 ```
 
