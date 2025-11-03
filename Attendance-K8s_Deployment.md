@@ -81,7 +81,6 @@ kubectl get ns
 **📁 Folder Structure**
 ```
 attendance-k8s/
-├── namespace.yaml
 ├── storageclass.yaml
 ├── pv-postgres.yaml
 ├── secret.yaml
