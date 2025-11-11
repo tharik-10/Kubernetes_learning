@@ -360,7 +360,7 @@ spec:
               memory: "1Gi"
           volumeMounts:
             - name: config-volume
-              mountPath: /app/config.yaml
+              mountPath: /ap1/config.yaml
               subPath: config.yaml
           readinessProbe:
             httpGet:
