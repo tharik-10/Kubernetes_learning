@@ -75,16 +75,29 @@ Located at: `/opt/kafka/config/server.properties`
 
 ### 🧾 Key Parameters Explained
 
-| Parameter | Description | Example |
-|------------|--------------|----------|
-| `broker.id` | Unique ID for each Kafka broker | `1`, `2`, `3` |
-| `listeners` | Defines how the broker listens for connections | `PLAINTEXT://kafka1:9092` |
-| `log.dirs` | Directory for storing Kafka logs (topic data) | `/tmp/kafka-logs` |
-| `zookeeper.connect` | ZooKeeper connection string for cluster coordination | `zk1:2181,zk2:2181,zk3:2181` |
-| `num.partitions` | Default partitions per topic | `3` |
-| `log.retention.hours` | Duration to retain messages | `168` (1 week) |
-| `auto.create.topics.enable` | Automatically create topics when referenced | `true` |
-| `offsets.topic.replication.factor` | Replication for internal offset topics | `3` |
+| Parameter                          | Description                                                                                                                           | Example                                    |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| `broker.id`                        | Unique ID for each Kafka broker in the cluster. Must be different for every broker.                                                   | `1`, `2`, `3`                              |
+| `listeners`                        | Defines the network interface and port Kafka will listen on for incoming client connections.                                          | `PLAINTEXT://0.0.0.0:9092`                 |
+| `advertised.listeners`             | The hostname or IP address Kafka advertises to clients for connection. Important when clients connect from outside the broker's host. | `PLAINTEXT://172.31.10.20:9092`            |
+| `log.dirs`                         | Directory path where Kafka stores topic logs, partitions, and message data.                                                           | `/var/lib/kafka/logs` or `/tmp/kafka-logs` |
+| `zookeeper.connect`                | Comma-separated list of ZooKeeper host:port pairs used by Kafka for coordination.                                                     | `zk1:2181,zk2:2181,zk3:2181`               |
+| `num.partitions`                   | Default number of partitions created per topic (can be overridden during topic creation).                                             | `3`                                        |
+| `log.retention.hours`              | Number of hours Kafka retains log segments before deletion.                                                                           | `168` (1 week)                             |
+| `log.segment.bytes`                | Maximum size of a log segment file before a new one is created.                                                                       | `1073741824` (1 GB)                        |
+| `log.retention.check.interval.ms`  | Interval (in ms) for checking if log segments can be deleted.                                                                         | `300000` (5 minutes)                       |
+| `auto.create.topics.enable`        | Automatically creates a topic when a producer or consumer references it (not recommended for production).                             | `true` / `false`                           |
+| `offsets.topic.replication.factor` | Replication factor for Kafka’s internal offsets topic (stores consumer offsets).                                                      | `3`                                        |
+| `default.replication.factor`       | Default replication factor for automatically created topics.                                                                          | `3`                                        |
+| `min.insync.replicas`              | Minimum number of replicas that must acknowledge a write for it to be considered successful.                                          | `2`                                        |
+| `delete.topic.enable`              | Allows topics to be deleted using the Kafka CLI.                                                                                      | `true`                                     |
+| `unclean.leader.election.enable`   | If true, allows an out-of-sync replica to become leader (can cause data loss).                                                        | `false`                                    |
+| `num.network.threads`              | Number of threads handling network requests.                                                                                          | `3`                                        |
+| `num.io.threads`                   | Number of threads handling disk I/O operations.                                                                                       | `8`                                        |
+| `num.replica.fetchers`             | Number of threads used by replicas to fetch data from leaders.                                                                        | `1`                                        |
+| `socket.send.buffer.bytes`         | The size of the TCP send buffer.                                                                                                      | `102400`                                   |
+| `socket.receive.buffer.bytes`      | The size of the TCP receive buffer.                                                                                                   | `102400`                                   |
+| `socket.request.max.bytes`         | The maximum size of a Kafka request.                                                                                                  | `104857600` (100 MB)                       |
 
 ---
 
