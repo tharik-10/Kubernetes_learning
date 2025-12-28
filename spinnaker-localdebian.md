@@ -1,104 +1,116 @@
 Spinnaker Installation Guide (Local Debian on AWS EC2)
-This guide provides a verified, step-by-step workflow to install Spinnaker on a fresh Ubuntu EC2 instance using the Halyard CLI. It includes specific fixes for AWS networking and common permission issues.
+This guide provides a verified, step-by-step workflow to install Spinnaker on a fresh Ubuntu EC2 instance. It includes the necessary Java 17 setup and networking patches required for AWS access.
 
 📋 Prerequisites
 Instance Type: Minimum t3.xlarge (4 vCPUs, 16GB RAM).
 
-OS: Ubuntu 20.04 or 22.04 LTS.
+OS: Ubuntu 22.04 LTS (Jammy).
 
 AWS Security Group: Inbound rules for Ports 9000 (UI) and 8084 (API) from 0.0.0.0/0.
 
 🚀 Installation Steps
-1. Install Halyard
-Halyard is the administration tool used to configure and deploy Spinnaker.
+1. Install Java 17 (Required for Halyard 2025+)
+Modern Halyard versions require Java 17. Check and set this before installing Halyard to avoid UnsupportedClassVersionError.
 
 Bash
 
-# Update system and install curl
-sudo apt-get update && sudo apt-get install -y curl
+# Install OpenJDK 17
+sudo apt update
+sudo apt install -y openjdk-17-jdk
+
+# Ensure Java 17 is the default
+sudo update-alternatives --config java
+# (Select the number corresponding to Java 17 if prompted)
+
+# Verify
+java -version
+2. Install Halyard
+Bash
+
+# Install curl
+sudo apt-get install -y curl
 
 # Download and run the Halyard installer
 curl -O https://raw.githubusercontent.com/spinnaker/halyard/master/install/debian/InstallHalyard.sh
 sudo bash InstallHalyard.sh
 
-# Verify installation (you may need to restart your shell)
+# Verify installation
 hal -v
-2. Environment & Permissions Setup
-Halyard requires a specific directory structure. We force these permissions to prevent "Daemon Connectivity" and "Permission Denied" errors.
+3. Environment & Permissions Setup
+Fix permissions to allow the spinnaker user to write configuration files.
 
 Bash
 
-# Create the config directory Halyard expects
 sudo mkdir -p /home/spinnaker/.hal/
 sudo touch /home/spinnaker/.hal/config
 sudo chmod -R 777 /home/spinnaker/
 
-# Restart the Halyard daemon and wait for Java to initialize
+# Restart Halyard and wait for the Java daemon to warm up
 sudo systemctl restart halyard
-echo "Waiting 45 seconds for the Halyard Daemon to boot..."
+echo "Waiting 45 seconds for Halyard..."
 sleep 45
-3. Configure Spinnaker
-Run these commands one by one to configure the deployment.
-
-Note: Replace [YOUR_PUBLIC_IP] with your EC2 instance's actual Public IP address.
+4. Configure Spinnaker
+Note: Replace [YOUR_PUBLIC_IP] with your EC2 instance's Public IP.
 
 Bash
 
-# Set the Spinnaker version
+# 1. Set Version
 hal config version edit --version 2025.4.0
 
-# Set storage and deployment type
+# 2. Set Storage and Type
 hal config storage edit --type redis
 hal config deploy edit --type localdebian
 
-# Enable Kubernetes provider
-hal config provider kubernetes enable
-
-# Bind services to 0.0.0.0 for external access
-hal config edit --host 0.0.0.0
-
-# Configure UI and API Endpoints for your Public IP
+# 3. Configure External Access URLs
 hal config security ui edit --override-base-url http://[YOUR_PUBLIC_IP]:9000
 hal config security api edit --override-base-url http://[YOUR_PUBLIC_IP]:8084
-4. Deploy Spinnaker
-This command triggers the actual download and installation of the microservices.
 
+# 4. Force Gate (API) to listen on all interfaces
+mkdir -p ~/.hal/default/service-settings
+echo "host: 0.0.0.0" > ~/.hal/default/service-settings/gate.yml
+
+# 5. Enable Kubernetes Provider
+hal config provider kubernetes enable
+5. Deploy Spinnaker
 Bash
 
 sudo hal deploy apply
-5. Networking Patch (AWS Access)
-Halyard's default Apache configuration often locks to 127.0.0.1. Use these commands to force it to listen on the public interface.
+6. Networking & Apache Patch (Crucial for UI Access)
+Halyard defaults Apache to 127.0.0.1. Use these commands to force port 9000 to be public and enable the Spinnaker site.
 
 Bash
 
-# Update Apache ports configuration
-sudo sed -i 's/Listen 127.0.0.1:9000/Listen 0.0.0.0:9000/g' /etc/apache2/ports.conf
+# Force Apache to listen globally
+echo "Listen 0.0.0.0:9000" | sudo tee /etc/apache2/ports.conf
 
-# Update Spinnaker site configuration
-sudo sed -i 's/<VirtualHost 127.0.0.1:9000>/<VirtualHost *:9000>/g' /etc/apache2/sites-available/spinnaker.conf
+# Enable the Spinnaker site and disable the default "It Works" page
+sudo a2dissite 000-default
+sudo a2ensite spinnaker
 
-# Restart services to apply changes
+# Update the Spinnaker VirtualHost
+sudo sed -i 's/127.0.0.1:9000/*:9000/g' /etc/apache2/sites-available/spinnaker.conf
+
+# Final Restart
 sudo systemctl daemon-reload
 sudo systemctl restart apache2
 sudo systemctl restart spinnaker
 🛠 Troubleshooting
-Infinite Loading UI / 500 Errors
-If you can access the UI but cannot create an application, disable authorization checks (Fiat):
+Gate (8084) is not listening
+If netstat -tuln | grep 8084 shows nothing, the service is still booting (takes 2-3 mins). If it shows 127.0.0.1, ensure your gate.yml override is in the correct path:
 
 Bash
 
-hal config security authz disable
+sudo mkdir -p /home/spinnaker/.hal/default/service-settings
+echo "host: 0.0.0.0" | sudo tee /home/spinnaker/.hal/default/service-settings/gate.yml
 sudo hal deploy apply
-Halyard Daemon Connection Issues
-If you see Failed to connect to localhost/127.0.0.1:8064, ensure the service is running and has enough RAM:
+Apache "Default Page" instead of Spinnaker
+If you see the "Apache2 Ubuntu Default Page" on port 9000, run:
 
 Bash
 
-sudo systemctl restart halyard
-sudo journalctl -u halyard -f # To watch for errors
+sudo a2ensite spinnaker
+sudo systemctl restart apache2
 🔗 Verification
-Access your Spinnaker instance at:
-
 UI: http://[YOUR_PUBLIC_IP]:9000
 
-API: http://[YOUR_PUBLIC_IP]:8084/health
+API Health: http://[YOUR_PUBLIC_IP]:8084/health
