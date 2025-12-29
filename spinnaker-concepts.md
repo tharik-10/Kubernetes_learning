@@ -327,10 +327,10 @@ Used by:
 
 Spinnaker is:
 
-✔ A **powerful CD platform**
-✔ Best for **cloud‑native, large‑scale deployments**
-✔ Complements CI tools
-✔ Built for **safe production releases**
+- ✔ A **powerful CD platform**
+- ✔ Best for **cloud‑native, large‑scale deployments**
+- ✔ Complements CI tools
+- ✔ Built for **safe production releases**
 
 ---
 
