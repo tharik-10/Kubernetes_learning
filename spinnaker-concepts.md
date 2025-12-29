@@ -25,11 +25,11 @@ This README is designed to be **GitHub‑ready** and useful for:
 10. [Deployment Strategies](#deployment-strategies)
 11. [Canary Deployments](#canary-deployments)
 12. [Artifact Management](#artifact-management)
-13. [Multi-Cloud Support](#multi-cloud-support)
+13. [Multi Cloud Support](#multi-cloud-support)
 14. [Security Model (AuthN & AuthZ)](#security-model)
 15. [Spinnaker vs Jenkins](#spinnaker-vs-jenkins)
 16. [Spinnaker vs Other CI/CD Tools](#spinnaker-vs-other-cicd-tools)
-17. [Real-World Use Cases](#real-world-use-cases)
+17. [Real World Use Cases](#real-world-use-cases)
 18. [When NOT to Use Spinnaker](#when-not-to-use-spinnaker)
 19. [Best Practices](#best-practices)
 20. [Summary](#summary)
@@ -231,7 +231,7 @@ Artifacts connect **CI → CD**.
 
 ---
 
-## Multi‑Cloud Support
+## Multi Cloud Support
 
 Supported platforms:
 
@@ -287,7 +287,7 @@ Spinnaker = Deployment tool
 
 ---
 
-## Real‑World Use Cases
+## Real World Use Cases
 
 * Production deployments at scale
 * Zero‑downtime releases
