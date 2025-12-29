@@ -122,7 +122,7 @@ hal config version show
 ### List Accounts
 
 ```bash
-hal config account list
+hal config provider <provider-name> account <action>
 ```
 
 ### Delete an Account
