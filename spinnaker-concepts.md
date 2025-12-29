@@ -13,26 +13,26 @@ This README is designed to be **GitHub‑ready** and useful for:
 
 ## Table of Contents
 
-1. What is Spinnaker?
-2. Why Spinnaker Exists (Problem Statement)
-3. Where Spinnaker Fits in CI/CD
-4. Core Concepts of Spinnaker
-5. Spinnaker Architecture
-6. Spinnaker Microservices Explained
-7. Spinnaker Workflow (How It Works)
-8. Application, Cluster, Server Group Model
-9. Pipelines & Stages
-10. Deployment Strategies
-11. Canary Deployments
-12. Artifact Management
-13. Multi‑Cloud Support
-14. Security Model (AuthN & AuthZ)
-15. Spinnaker vs Jenkins
-16. Spinnaker vs Other CI/CD Tools
-17. Real‑World Use Cases
-18. When NOT to Use Spinnaker
-19. Best Practices
-20. Summary
+1. [What is Spinnaker?](#what-is-spinnaker)
+2. [Why Spinnaker Exists (Problem Statement)](#why-spinnaker-exists-problem-statement)
+3. [Where Spinnaker Fits in CI/CD](#where-spinnaker-fits-in-cicd)
+4. [Core Concepts of Spinnaker](#core-concepts-of-spinnaker)
+5. [Spinnaker Architecture](#spinnaker-architecture)
+6. [Spinnaker Microservices Explained](#spinnaker-microservices-explained)
+7. [Spinnaker Workflow (How It Works)](#spinnaker-workflow-how-it-works)
+8. [Application, Cluster & Server Group Model](#application-cluster--server-group-model)
+9. [Pipelines & Stages](#pipelines--stages)
+10. [Deployment Strategies](#deployment-strategies)
+11. [Canary Deployments](#canary-deployments)
+12. [Artifact Management](#artifact-management)
+13. [Multi-Cloud Support](#multi-cloud-support)
+14. [Security Model (AuthN & AuthZ)](#security-model)
+15. [Spinnaker vs Jenkins](#spinnaker-vs-jenkins)
+16. [Spinnaker vs Other CI/CD Tools](#spinnaker-vs-other-cicd-tools)
+17. [Real-World Use Cases](#real-world-use-cases)
+18. [When NOT to Use Spinnaker](#when-not-to-use-spinnaker)
+19. [Best Practices](#best-practices)
+20. [Summary](#summary)
 
 ---
 
