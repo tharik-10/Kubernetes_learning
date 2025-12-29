@@ -57,19 +57,19 @@ It focuses on:
 
 Traditional deployment tools had issues:
 
-❌ Risky production deployments
-❌ No built‑in rollback strategies
-❌ Manual approval chaos
-❌ No visibility into deployments
-❌ Hard to deploy across multiple clouds
+- ❌ Risky production deployments
+- ❌ No built‑in rollback strategies
+- ❌ Manual approval chaos
+- ❌ No visibility into deployments
+- ❌ Hard to deploy across multiple clouds
 
 ### Spinnaker solves this by:
 
-✅ Automated rollouts
-✅ Built‑in deployment strategies
-✅ Canary & blue‑green deployments
-✅ Rollbacks & versioning
-✅ Cloud‑native architecture
+- ✅ Automated rollouts
+- ✅ Built‑in deployment strategies
+- ✅ Canary & blue‑green deployments
+- ✅ Rollbacks & versioning
+- ✅ Cloud‑native architecture
 
 ---
 
@@ -306,10 +306,10 @@ Used by:
 
 ## When NOT to Use Spinnaker
 
-❌ Small projects
-❌ Simple deployments
-❌ No cloud environment
-❌ No need for progressive delivery
+- ❌ Small projects
+- ❌ Simple deployments
+- ❌ No cloud environment
+- ❌ No need for progressive delivery
 
 ---
 
