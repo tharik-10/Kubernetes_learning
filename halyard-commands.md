@@ -77,14 +77,6 @@ hal <command> --help
 
 ## Global Commands
 
-### Validate Configuration
-
-Checks whether the configuration is valid before deployment.
-
-```bash
-hal config deploy validate
-```
-
 ### Apply Configuration
 
 Deploys Spinnaker using the current Halyard configuration.
@@ -108,13 +100,6 @@ hal version list
 ```bash
 hal config version edit --version 1.34.0
 ```
-
-### Show Current Version
-
-```bash
-hal config version show
-```
-
 ---
 
 ## Account Management
@@ -128,7 +113,7 @@ hal config provider <provider-name> account <action>
 ### Delete an Account
 
 ```bash
-hal config account delete <account-name>
+hal config provider kubernetes account delete my-k8s-account
 ```
 
 ---
