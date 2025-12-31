@@ -1,16 +1,67 @@
-🏗️ Phase 1: Cluster & CLI SetupThis phase prepares your management machine and builds the EKS cluster.1. Install Required ToolsBash# Install AWS CLI, Kubectl, and Eksctl
+# 🚀 Spinnaker on Amazon EKS – Step-by-Step Deployment Guide
+
+This document provides a **complete, production-ready guide** to install and access **Spinnaker on Amazon EKS** using **Halyard**. It is structured into clear phases for ease of understanding and troubleshooting.
+
+---
+
+## 🏗️ Phase 1: Cluster & CLI Setup
+
+This phase prepares your management machine and provisions the EKS cluster.
+
+---
+
+### 1. Install Required Tools
+
+```bash
+# Update system and install dependencies
 sudo apt update && sudo apt install -y docker.io unzip
+
+# Install AWS CLI v2
 curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
 unzip awscliv2.zip && sudo ./aws/install
 
+# Install kubectl
 curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
 sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 
+# Install eksctl
 curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
 sudo mv /tmp/eksctl /usr/local/bin/eksctl
-2. AWS AuthenticationOption A: IAM Role (Recommended)Attach an IAM Role with AdministratorAccess to your EC2 instance (Actions > Security > Modify IAM role).Option B: Access KeysBashaws configure
-# Enter Access Key, Secret Key, and Region (e.g., us-east-1)
-3. Create the EKS ClusterBasheksctl create cluster \
+```
+
+Verify installations:
+
+```bash
+aws --version
+kubectl version --client
+eksctl version
+```
+
+---
+
+### 2. AWS Authentication
+
+#### Option A: IAM Role (Recommended)
+
+Attach an IAM Role with **AdministratorAccess** to your EC2 instance:
+
+```
+EC2 → Actions → Security → Modify IAM Role
+```
+
+#### Option B: Access Keys
+
+```bash
+aws configure
+# Enter Access Key, Secret Key, and default region (e.g., us-east-1)
+```
+
+---
+
+### 3. Create the EKS Cluster
+
+```bash
+eksctl create cluster \
   --name spin-cluster \
   --region us-east-1 \
   --nodegroup-name standard-nodes \
@@ -18,7 +69,28 @@ sudo mv /tmp/eksctl /usr/local/bin/eksctl
   --nodes 3 \
   --with-oidc \
   --managed
-🛠️ Phase 2: Halyard & Spinnaker DeploymentSpinnaker runs as a set of microservices managed by the Halyard daemon.1. Fix Permissions for HalyardHalyard runs as the spinnaker user and needs access to your kubeconfig and AWS credentials.Bash# Create directories
+```
+
+Validate cluster access:
+
+```bash
+kubectl get nodes
+```
+
+---
+
+## 🛠️ Phase 2: Halyard & Spinnaker Deployment
+
+Spinnaker is deployed and managed by the **Halyard daemon**.
+
+---
+
+### 1. Fix Permissions for Halyard
+
+Halyard runs as the `spinnaker` user and needs access to Kubernetes and AWS credentials.
+
+```bash
+# Create directories
 sudo mkdir -p /home/spinnaker/.kube /home/spinnaker/.aws
 
 # Copy configs
@@ -29,39 +101,126 @@ sudo cp -r ~/.aws/* /home/spinnaker/.aws/
 sudo chown -R spinnaker:spinnaker /home/spinnaker/.kube /home/spinnaker/.aws
 sudo chmod 600 /home/spinnaker/.kube/config /home/spinnaker/.aws/credentials
 
-# Restart Halyard to pick up changes
+# Restart Halyard
 sudo service halyard restart && sleep 15
-2. Configure Kubernetes ProviderBashhal config provider kubernetes enable
+```
+
+---
+
+### 2. Configure Kubernetes Provider
+
+```bash
+hal config provider kubernetes enable
+
 hal config provider kubernetes account add my-k8s-account \
-    --context $(kubectl config current-context) \
-    --kubeconfig-file /home/spinnaker/.kube/config
-hal config deploy edit --type distributed --account-name my-k8s-account
-3. Deploy SpinnakerBashhal config version edit --version 2025.0.1
+  --context $(kubectl config current-context) \
+  --kubeconfig-file /home/spinnaker/.kube/config
+
+hal config deploy edit \
+  --type distributed \
+  --account-name my-k8s-account
+```
+
+---
+
+### 3. Deploy Spinnaker
+
+```bash
+hal config version edit --version 2025.0.1
 hal deploy apply
-🌐 Phase 3: Accessing SpinnakerChoose ONE of the following methods to access the UI.Option A: NodePort (Easiest / Free)This uses your Worker Node's Public IP and high-range ports.1. Change Service TypesBashkubectl patch svc spin-deck -n spinnaker -p '{"spec": {"type": "NodePort"}}'
+```
+
+Monitor deployment:
+
+```bash
+kubectl get pods -n spinnaker
+```
+
+---
+
+## 🌐 Phase 3: Accessing Spinnaker
+
+Choose **ONE** access method.
+
+---
+
+## Option A: NodePort (Easiest / Free)
+
+### 1. Change Service Types
+
+```bash
+kubectl patch svc spin-deck -n spinnaker -p '{"spec": {"type": "NodePort"}}'
 kubectl patch svc spin-gate -n spinnaker -p '{"spec": {"type": "NodePort"}}'
-2. Get your Public IP and PortsBash# Get the ports (e.g., 9000:32410 and 8084:30541)
+```
+
+### 2. Get NodePorts and Public IP
+
+```bash
 kubectl get svc -n spinnaker
 
-# Get Public IP of a node
-aws ec2 describe-instances --filters "Name=tag:kubernetes.io/cluster/spin-cluster,Values=owned" --query "Reservations[*].Instances[*].PublicIpAddress" --output text
-3. CRITICAL: Update AWS Security GroupGo to EC2 Console > Instances > Select an EKS Node.Under Security, click the Security Group.Edit Inbound Rules and add:TCP 32410 (Deck) from 0.0.0.0/0TCP 30541 (Gate) from 0.0.0.0/04. Update Halyard URLsBashexport NODE_IP="[YOUR_PUBLIC_IP]"
-hal config security ui edit --override-base-url http://$NODE_IP:32410
-hal config security api edit --override-base-url http://$NODE_IP:30541
-hal config security api edit --cors-access-pattern http://$NODE_IP:32410
+aws ec2 describe-instances \
+  --filters "Name=tag:kubernetes.io/cluster/spin-cluster,Values=owned" \
+  --query "Reservations[*].Instances[*].PublicIpAddress" \
+  --output text
+```
+
+### 3. Update AWS Security Group (CRITICAL)
+
+Add inbound rules:
+
+| Service | Port  | Source    |
+| ------- | ----- | --------- |
+| Deck    | 32410 | 0.0.0.0/0 |
+| Gate    | 30541 | 0.0.0.0/0 |
+
+---
+
+### 4. Update Halyard URLs
+
+```bash
+export NODE_IP=<NODE_PUBLIC_IP>
+
+hal config security ui edit \
+  --override-base-url http://$NODE_IP:32410
+
+hal config security api edit \
+  --override-base-url http://$NODE_IP:30541
+
+hal config security api edit \
+  --cors-access-pattern http://$NODE_IP:32410
+
 hal deploy apply
-Option B: ALB Ingress Controller (Professional)This creates a single AWS Application Load Balancer.1. Install LB Controller & Cert-ManagerBash# Install Cert-Manager
+```
+
+---
+
+## Option B: ALB Ingress Controller (Production / Professional)
+
+---
+
+### 1. Install Cert-Manager & AWS Load Balancer Controller
+
+```bash
 kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.13.3/cert-manager.yaml
 
-# Create IAM Service Account for Controller
+# IAM Service Account
 eksctl create iamserviceaccount \
-  --cluster=spin-cluster \
-  --namespace=kube-system \
-  --name=aws-load-balancer-controller \
+  --cluster spin-cluster \
+  --namespace kube-system \
+  --name aws-load-balancer-controller \
   --role-name AmazonEKSLoadBalancerControllerRole \
-  --attach-policy-arn=arn:aws:iam::aws:policy/AmazonEKSLoadBalancerControllerIAMPolicy \
+  --attach-policy-arn arn:aws:iam::aws:policy/AmazonEKSLoadBalancerControllerIAMPolicy \
   --approve
-2. Apply Ingress ManifestCreate spinnaker-ingress.yaml:YAMLapiVersion: networking.k8s.io/v1
+```
+
+---
+
+### 2. Apply Ingress Manifest
+
+**spinnaker-ingress.yaml**
+
+```yaml
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: spinnaker-ingress
@@ -88,9 +247,46 @@ spec:
             name: spin-gate
             port:
               number: 8084
-kubectl apply -f spinnaker-ingress.yaml3. Update Halyard for ALBBashexport ALB_URL=$(kubectl get ingress spinnaker-ingress -n spinnaker -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+```
+
+```bash
+kubectl apply -f spinnaker-ingress.yaml
+```
+
+---
+
+### 3. Update Halyard for ALB
+
+```bash
+export ALB_URL=$(kubectl get ingress spinnaker-ingress -n spinnaker \
+  -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
 
 hal config security ui edit --override-base-url http://$ALB_URL
 hal config security api edit --override-base-url http://$ALB_URL/api/v1
+
 hal deploy apply
-🔍 Phase 4: Troubleshooting Common IssuesIssueCauseFix"Error fetching applications"CORS or Port mismatchEnsure hal config security api edit --cors-access-pattern matches the UI URL exactly.404 on API callsPath mismatch in IngressEnsure your Ingress path (/api/v1) matches the Halyard override-base-url.UI spins foreverSecurity Group blockedVerify the Gate port (e.g., 30541) is open in AWS EC2 Security Groups."Halyard cannot connect"Permission issueRun the chown -R spinnaker:spinnaker commands in Phase 2 again.
+```
+
+---
+
+## 🔍 Phase 4: Troubleshooting Common Issues
+
+| Issue                       | Cause                  | Fix                                         |
+| --------------------------- | ---------------------- | ------------------------------------------- |
+| Error fetching applications | CORS mismatch          | Ensure `cors-access-pattern` matches UI URL |
+| 404 on API calls            | Ingress path mismatch  | Ensure `/api/v1` matches Halyard config     |
+| UI spins forever            | Security Group blocked | Open Gate port in EC2 SG                    |
+| Halyard cannot connect      | Permission issue       | Re-run `chown -R spinnaker:spinnaker`       |
+
+---
+
+## ✅ Final Notes
+
+* NodePort is ideal for **learning and demos**
+* ALB Ingress is recommended for **production environments**
+* Always verify Security Groups and IAM permissions
+
+---
+
+🎯 **You now have a fully functional Spinnaker deployment on Amazon EKS!**
+
