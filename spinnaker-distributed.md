@@ -107,7 +107,7 @@ sudo service halyard restart && sleep 15
 
 ---
 
-### 2. Configure Kubernetes Provider
+### 2. Configure Kubernetes Provider (Distributed Deployment)
 
 ```bash
 hal config provider kubernetes enable
@@ -120,6 +120,8 @@ hal config deploy edit \
   --type distributed \
   --account-name my-k8s-account
 ```
+
+> ⚠️ **Important**: `distributed` is mandatory for EKS/Kubernetes deployments. Do **not** use `localdebian` on EKS.
 
 ---
 
@@ -173,8 +175,6 @@ Add inbound rules:
 | Deck    | 32410 | 0.0.0.0/0 |
 | Gate    | 30541 | 0.0.0.0/0 |
 
----
-
 ### 4. Update Halyard URLs
 
 ```bash
@@ -196,8 +196,6 @@ hal deploy apply
 
 ## Option B: ALB Ingress Controller (Production / Professional)
 
----
-
 ### 1. Install Cert-Manager & AWS Load Balancer Controller
 
 ```bash
@@ -212,8 +210,6 @@ eksctl create iamserviceaccount \
   --attach-policy-arn arn:aws:iam::aws:policy/AmazonEKSLoadBalancerControllerIAMPolicy \
   --approve
 ```
-
----
 
 ### 2. Apply Ingress Manifest
 
@@ -253,8 +249,6 @@ spec:
 kubectl apply -f spinnaker-ingress.yaml
 ```
 
----
-
 ### 3. Update Halyard for ALB
 
 ```bash
@@ -266,30 +260,37 @@ hal config security api edit --override-base-url http://$ALB_URL/api/v1
 
 hal deploy apply
 ```
-Option C: Classic/Network LoadBalancer (Balanced)
-This creates a dedicated AWS Load Balancer for both the UI and the API. It is more stable than NodePort but simpler than an Ingress Controller.
 
-1. Change Service Types to LoadBalancer
+---
 
-Bash
+## Option C: Classic / Network LoadBalancer (Balanced)
 
+Creates a dedicated AWS Load Balancer for both the UI and the API.
+
+### 1. Change Service Types to LoadBalancer
+
+```bash
 kubectl patch svc spin-deck -n spinnaker -p '{"spec": {"type": "LoadBalancer"}}'
 kubectl patch svc spin-gate -n spinnaker -p '{"spec": {"type": "LoadBalancer"}}'
-2. Retrieve Load Balancer DNS Names Wait a few minutes for AWS to provision the ELBs, then run:
+```
 
-Bash
+### 2. Retrieve Load Balancer DNS Names
 
+```bash
 export DECK_URL=$(kubectl get svc spin-deck -n spinnaker -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
 export GATE_URL=$(kubectl get svc spin-gate -n spinnaker -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-3. Update Halyard
+```
 
-Bash
+### 3. Update Halyard
 
+```bash
 hal config security ui edit --override-base-url http://$DECK_URL:9000
 hal config security api edit --override-base-url http://$GATE_URL:8084
 hal config security api edit --cors-access-pattern http://$DECK_URL:9000
 
 hal deploy apply
+```
+
 ---
 
 ## 🔍 Phase 4: Troubleshooting Common Issues
@@ -302,31 +303,32 @@ hal deploy apply
 | Halyard cannot connect      | Permission issue       | Re-run `chown -R spinnaker:spinnaker`       |
 
 ---
-1. Restarting the Halyard Daemon
-If you encounter Failed to connect to localhost/127.0.0.1:8064 after a reboot or crash, restart the daemon.
 
-If running as a system service:
+### Restarting the Halyard Daemon
 
-Bash
+If you encounter `Failed to connect to localhost/127.0.0.1:8064`:
 
+```bash
 sudo systemctl restart halyard
-If running manually (or if the service fails):
+```
 
-Bash
+If running manually:
 
-# Kill any hung processes
+```bash
 pkill -f halyard
-
-# Start in the background
 hal &
+```
+
+---
 
 ## ✅ Final Notes
 
 * NodePort is ideal for **learning and demos**
 * ALB Ingress is recommended for **production environments**
-* Always verify Security Groups and IAM permissions
+* Always verify **Security Groups** and **IAM permissions**
 
 ---
 
 🎯 **You now have a fully functional Spinnaker deployment on Amazon EKS!**
+
 
