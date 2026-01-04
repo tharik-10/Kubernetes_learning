@@ -1,13 +1,25 @@
-🚀 Spinnaker NGINX Deployment: The Ultimate Guide
-🛠️ Phase 1: Infrastructure Permissions (RBAC)
-Run this on your Ubuntu server terminal to prevent "Forbidden" errors.
+# 🚀 Spinnaker NGINX Deployment: The Ultimate Guide
 
-Create the file: nano spinnaker-rbac.yaml
+This guide provides **two complete methods** to deploy **NGINX on Kubernetes using Spinnaker**:
 
-Paste this content:
+* **Method 1:** Simple text-based manifest (quick testing)
+* **Method 2:** Production-grade GitOps flow using **Kustomize + Bake stage**
 
-YAML
+---
 
+## 🛠️ Phase 1: Infrastructure Permissions (RBAC)
+
+Run the following steps on your **Ubuntu server terminal** to avoid `Forbidden` errors in Spinnaker.
+
+### 1. Create RBAC File
+
+```bash
+nano spinnaker-rbac.yaml
+```
+
+### 2. Paste the RBAC Configuration
+
+```yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -20,29 +32,48 @@ roleRef:
   kind: ClusterRole
   name: cluster-admin
   apiGroup: rbac.authorization.k8s.io
-Apply it: kubectl apply -f spinnaker-rbac.yaml
+```
 
-📗 Method 1: The Simple Way (Text Manifest)
-Best for quick testing without using GitHub.
+### 3. Apply RBAC
 
-1. UI Steps (Method 1)
-Create App: Click Actions > Create Application. Name: nginx-simple.
+```bash
+kubectl apply -f spinnaker-rbac.yaml
+```
 
-Create Pipeline: Name it Deploy-Text.
+---
 
-Add Stage: Click Add Stage and select Deploy (Manifest).
+## 📗 Method 1: Simple Deployment (Text Manifest)
 
-Account: Select my-k8s-v2-account.
+**Best for:** Quick testing without GitHub
 
-Manifest Source: Select Text.
+---
 
-Text Manifest: Paste the YAML from the section below.
+### 1️⃣ UI Steps (Method 1)
 
-Moniker: Scroll to the bottom and enter nginx-simple in the App field.
+1. **Create Application**
 
-2. YAML Source (Method 1)
-YAML
+   * Click **Actions → Create Application**
+   * Name: `nginx-simple`
 
+2. **Create Pipeline**
+
+   * Name: `Deploy-Text`
+
+3. **Add Stage → Deploy (Manifest)**
+
+   * Account: `my-k8s-v2-account`
+   * Manifest Source: `Text`
+   * Paste YAML (below)
+
+4. **Moniker**
+
+   * App: `nginx-simple`
+
+---
+
+### 2️⃣ Text Manifest YAML
+
+```yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -60,11 +91,15 @@ spec:
       containers:
       - name: nginx
         image: nginx:latest
-3. Pipeline JSON (Method 1)
-If the UI fails, go to Pipeline Actions > Edit as JSON and paste this:
+```
 
-JSON
+---
 
+### 3️⃣ Pipeline JSON (Method 1)
+
+Use **Pipeline Actions → Edit as JSON** if UI fails.
+
+```json
 {
   "stages": [
     {
@@ -81,7 +116,11 @@ JSON
             "selector": { "matchLabels": { "app": "nginx" } },
             "template": {
               "metadata": { "labels": { "app": "nginx" } },
-              "spec": { "containers": [{ "name": "nginx", "image": "nginx:latest" }] }
+              "spec": {
+                "containers": [
+                  { "name": "nginx", "image": "nginx:latest" }
+                ]
+              }
             }
           }
         }
@@ -92,26 +131,33 @@ JSON
     }
   ]
 }
-📘 Method 2: The Advanced Way (Kustomize)
-The production GitOps flow using GitHub and the Bake stage.
-Step 1: Prepare Git Repository
-Your GitHub repo (tharik-10/Kubernetes_learning) must have this exact structure:
+```
 
-Plaintext
+---
 
+## 📘 Method 2: Advanced Deployment (Kustomize + GitOps)
+
+**Best for:** Production-grade deployments
+
+---
+
+## 1️⃣ GitHub Repository Structure
+
+Repository: **tharik-10/Kubernetes_learning**
+
+```
 my-nginx-app/
 └── base/
     ├── deployment.yaml
     ├── service.yaml
     └── kustomization.yaml
+```
 
-1. GitHub File Structure
-In your repo tharik-10/Kubernetes_learning, create the folder my-nginx-app/base/ with these files:
+---
 
-deployment.yaml
+### deployment.yaml
 
-YAML
-
+```yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -129,10 +175,13 @@ spec:
       containers:
       - image: nginx:latest
         name: nginx
-service.yaml
+```
 
-YAML
+---
 
+### service.yaml
+
+```yaml
 apiVersion: v1
 kind: Service
 metadata:
@@ -144,55 +193,63 @@ spec:
     targetPort: 80
   selector:
     app: nginx
-kustomization.yaml
+```
 
-YAML
+---
 
+### kustomization.yaml
+
+```yaml
 resources:
   - deployment.yaml
   - service.yaml
-2. Halyard Configuration (Terminal)
-Run these to ensure the git/repo account tharik-10 appears in Spinnaker.
+```
 
-Bash
+---
 
+## 2️⃣ Halyard Configuration
+
+Ensure GitHub artifact account appears in Spinnaker.
+
+```bash
 hal config artifact gitrepo enable
-hal config artifact gitrepo account add tharik-10 --token-file /home/ubuntu/git-token.txt
+hal config artifact gitrepo account add tharik-10 \
+  --token-file /home/ubuntu/git-token.txt
 hal deploy apply
-3. UI Steps (Method 2)
-Stage 1: Bake (Manifest)
+```
 
-Add Stage: Select Bake (Manifest).
+---
 
-Render Engine: Select KUSTOMIZE.
+## 3️⃣ UI Pipeline Configuration (Method 2)
 
-Expected Artifact: Select tharik-10 (Git Repo).
+### Stage 1: Bake (Manifest)
 
-URL: https://github.com/tharik-10/Kubernetes_learning.
+* Stage Type: `Bake (Manifest)`
+* Render Engine: `KUSTOMIZE`
+* Expected Artifact: `tharik-10`
+* Repo URL: `https://github.com/tharik-10/Kubernetes_learning`
+* Branch: `main`
+* Kustomize Path: `my-nginx-app/base/kustomization.yaml`
 
-Branch: main.
+**Produces Artifact:**
 
-Kustomize File Path: my-nginx-app/base/kustomization.yaml.
+* Name: `baked-output`
+* Type: `embedded/base64`
 
-Produces Artifacts (Bottom): Add a new artifact. Name: baked-output, Type: embedded/base64.
+---
 
-Stage 2: Deploy (Manifest)
+### Stage 2: Deploy (Manifest)
 
-Add Stage: Select Deploy (Manifest).
+* Manifest Source: `Artifact`
+* Manifest Artifact: `baked-output`
+* Artifact Account: `embedded-artifact`
+* Moniker App: `nginx-service`
 
-Manifest Source: Select Artifact.
+---
 
-Manifest Artifact: Select baked-output.
+## 4️⃣ Pipeline JSON (Method 2)
 
-Artifact Account: Select embedded-artifact.
-
-Moniker: Set App to nginx-service.
-
-4. Pipeline JSON (Method 2)
-Use this JSON to fix all pathing and artifact "src is null" errors at once:
-
-JSON
-
+```json
 {
   "stages": [
     {
@@ -215,7 +272,10 @@ JSON
         {
           "displayName": "baked-output",
           "id": "fixed-id-123",
-          "matchArtifact": { "name": "baked-output", "type": "embedded/base64" }
+          "matchArtifact": {
+            "name": "baked-output",
+            "type": "embedded/base64"
+          }
         }
       ]
     },
@@ -230,7 +290,10 @@ JSON
       "manifestArtifactId": "fixed-id-123",
       "manifestSource": "artifact",
       "source": "artifact",
-      "moniker": { "app": "nginx-service", "cluster": "nginx-kustomize" },
+      "moniker": {
+        "app": "nginx-service",
+        "cluster": "nginx-kustomize"
+      },
       "manifestArtifact": {
         "artifactAccount": "embedded-artifact",
         "name": "baked-output",
@@ -239,9 +302,19 @@ JSON
     }
   ]
 }
-🚀 Execution & Verification
-Save Changes and click Start Manual Execution.
+```
 
-Go to the Infrastructure > Clusters tab.
+---
 
-Locate nginx-service-lb to find your External DNS/IP.
+## 🚀 Execution & Verification
+
+1. **Save Changes**
+2. Click **Start Manual Execution**
+3. Navigate to **Infrastructure → Clusters**
+4. Locate **nginx-service-lb**
+5. Access NGINX using the **External DNS/IP**
+
+---
+
+✅ **You now have both testing and production-grade NGINX deployments using Spinnaker!**
+
