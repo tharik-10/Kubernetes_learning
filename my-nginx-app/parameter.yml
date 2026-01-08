@@ -1,0 +1,21 @@
+application:
+  name: nginx-demo
+  namespace: default
+  image: nginx:1.25
+
+resources:
+  cpu:
+    request: "100m"
+    limit: "500m"
+  memory:
+    request: "128Mi"
+    limit: "256Mi"
+
+replicas: 2
+
+features:
+  livenessProbe: true
+  readinessProbe: false
+
+service:
+  port: 80
