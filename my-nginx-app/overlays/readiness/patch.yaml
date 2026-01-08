@@ -1,0 +1,11 @@
+spec:
+  template:
+    spec:
+      containers:
+        - name: {{APP_NAME}}
+          readinessProbe:
+            httpGet:
+              path: /
+              port: {{PORT}}
+            initialDelaySeconds: 5
+            periodSeconds: 5
