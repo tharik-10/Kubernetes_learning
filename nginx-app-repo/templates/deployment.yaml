@@ -1,45 +1,44 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Values.application.name }}
-  namespace: {{ .Values.application.namespace }}
+  name: {{ .Values.application.name | quote }}
+  namespace: {{ .Values.application.namespace | quote }}
 spec:
   replicas: {{ .Values.replicas }}
   selector:
     matchLabels:
-      app: {{ .Values.application.name }}
+      app: {{ .Values.application.name | quote }}
   template:
     metadata:
       labels:
-        app: {{ .Values.application.name }}
+        app: {{ .Values.application.name | quote }}
     spec:
       containers:
-        - name: {{ .Values.application.name }}
-          image: {{ .Values.application.image }}
+        - name: {{ .Values.application.name | quote }}
+          image: "{{ .Values.application.image }}"
           ports:
             - containerPort: {{ .Values.service.port }}
           resources:
             requests:
-              cpu: {{ .Values.resources.cpu.request }}
-              memory: {{ .Values.resources.memory.request }}
+              cpu: {{ .Values.resources.cpu.request | quote }}
+              memory: {{ .Values.resources.memory.request | quote }}
             limits:
-              cpu: {{ .Values.resources.cpu.limit }}
-              memory: {{ .Values.resources.memory.limit }}
-
-          {{- if .Values.features.livenessProbe }}
+              cpu: {{ .Values.resources.cpu.limit | quote }}
+              memory: {{ .Values.resources.memory.limit | quote }}
+{{- if .Values.features.livenessProbe }}
           livenessProbe:
             httpGet:
               path: /
               port: {{ .Values.service.port }}
             initialDelaySeconds: 10
             periodSeconds: 5
-          {{- end }}
-
-          {{- if .Values.features.readinessProbe }}
+{{- end }}
+{{- if .Values.features.readinessProbe }}
           readinessProbe:
             httpGet:
               path: /
               port: {{ .Values.service.port }}
             initialDelaySeconds: 5
             periodSeconds: 5
-          {{- end }}
+{{- end }}
+
