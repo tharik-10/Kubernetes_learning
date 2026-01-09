@@ -1,0 +1,8 @@
+{{- if .Values.features.readinessProbe }}
+readinessProbe:
+  httpGet:
+    path: /
+    port: {{ .Values.service.port }}
+  initialDelaySeconds: 5
+  periodSeconds: 5
+{{- end }}
