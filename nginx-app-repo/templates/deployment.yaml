@@ -25,3 +25,21 @@ spec:
             limits:
               cpu: {{ .Values.resources.cpu.limit }}
               memory: {{ .Values.resources.memory.limit }}
+
+          {{- if .Values.features.livenessProbe }}
+          livenessProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.service.port }}
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          {{- end }}
+
+          {{- if .Values.features.readinessProbe }}
+          readinessProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.service.port }}
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          {{- end }}
