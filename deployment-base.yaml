@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: ${APP_NAME}
-        image: ${IMAGE_ID}
+        image: ${parameters.IMAGE_ID}
         ports:
         - containerPort: 80
         resources:
