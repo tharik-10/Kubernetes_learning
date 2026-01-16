@@ -145,10 +145,10 @@ aws eks describe-nodegroup \
 
 ```bash
 aws eks update-nodegroup-config \
-  --cluster-name demo-eks \
-  --nodegroup-name demo-ng \
-  --scaling-config minSize=1,maxSize=3,desiredSize=2 \
-  --region ap-south-1
+  --cluster-name spin-cluster \
+  --nodegroup-name standard-nodes \
+  --scaling-config minSize=0,maxSize=3,desiredSize=0 \
+  --region us-east-1
 ```
 
 ## 6. Kubernetes RBAC Testing (Admin vs Dev)
