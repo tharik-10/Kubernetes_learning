@@ -441,6 +441,12 @@ Update Halyard:
 bash
 hal config security ui edit --override-base-url http://$ALB_URL
 hal config security api edit --override-base-url http://$ALB_URL/api/v1
+Enable CORS (MANDATORY)
+hal config security api edit \
+  --cors-access-pattern $ALB
+
+
+✅ This allows the browser UI → Gate API calls.
 Redeploy:
 
 bash
