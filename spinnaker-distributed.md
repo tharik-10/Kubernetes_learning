@@ -219,6 +219,41 @@ hal config deploy edit \
 > ⚠️ **Important**: `distributed` is mandatory for EKS/Kubernetes deployments. Do **not** use `localdebian` on EKS.
 
 ---
+Step 1: Create an S3 Bucket for Spinnaker
+
+Create a globally unique bucket:
+
+aws s3 mb s3://spin-cluster-spinnaker-data --region us-east-1
+
+
+Verify:
+
+aws s3 ls | grep spin-cluster-spinnaker-data
+
+Step 3: Configure S3 Storage in Halyard
+
+Run as the ubuntu user (not root):
+
+hal config storage s3 edit \
+  --bucket spin-cluster-spinnaker-data \
+  --region us-east-1
+
+
+Enable S3 as the storage backend:
+
+hal config storage edit --type s3
+
+
+Verify configuration:
+
+hal config storage s3 
+
+
+Expected output should show:
+
+bucket: spin-cluster-spinnaker-data
+region: us-east-1
+
 
 ### 3. Deploy Spinnaker
 
