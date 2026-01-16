@@ -324,28 +324,79 @@ hal deploy apply
 
 ---
 
-## Option B: ALB Ingress Controller (Production / Professional)
+Phase 3: ALB Ingress Setup
+Install cert-manager:
 
-### 1. Install Cert-Manager & AWS Load Balancer Controller
-
-```bash
+bash
 kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.13.3/cert-manager.yaml
+Create IAM Policy (skip if already exists):
 
-# IAM Service Account
-eksctl create iamserviceaccount \
-  --cluster spin-cluster \
-  --namespace kube-system \
-  --name aws-load-balancer-controller \
+bash
+curl -o iam_policy.json \
+https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.6.2/docs/install/iam_policy.json
+
+aws iam create-policy \
+  --policy-name AWSLoadBalancerControllerIAMPolicy \
+  --policy-document file://iam_policy.json
+Create IAM Role with Trust Policy  
+Use your cluster’s OIDC provider ID (58BEEF23A3B700AA3C2D19DCB86F4D57):
+
+trust-policy.json:
+
+json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Federated": "arn:aws:iam::574621078554:oidc-provider/oidc.eks.us-east-1.amazonaws.com/id/58BEEF23A3B700AA3C2D19DCB86F4D57"
+      },
+      "Action": "sts:AssumeRoleWithWebIdentity",
+      "Condition": {
+        "StringEquals": {
+          "oidc.eks.us-east-1.amazonaws.com/id/58BEEF23A3B700AA3C2D19DCB86F4D57:sub": "system:serviceaccount:kube-system:aws-load-balancer-controller"
+        }
+      }
+    }
+  ]
+}
+Create role:
+
+bash
+aws iam create-role \
   --role-name AmazonEKSLoadBalancerControllerRole \
-  --attach-policy-arn arn:aws:iam::aws:policy/AmazonEKSLoadBalancerControllerIAMPolicy \
-  --approve
-```
+  --assume-role-policy-document file://trust-policy.json
+Attach policy:
 
-### 2. Apply Ingress Manifest
+bash
+aws iam attach-role-policy \
+  --role-name AmazonEKSLoadBalancerControllerRole \
+  --policy-arn arn:aws:iam::574621078554:policy/AWSLoadBalancerControllerIAMPolicy
+Annotate Service Account:
 
-**spinnaker-ingress.yaml**
+bash
+kubectl annotate serviceaccount aws-load-balancer-controller \
+  -n kube-system eks.amazonaws.com/role-arn=arn:aws:iam::574621078554:role/AmazonEKSLoadBalancerControllerRole --overwrite
+Restart ALB Controller:
 
-```yaml
+bash
+kubectl rollout restart deployment aws-load-balancer-controller -n kube-system
+Phase 4: Ingress Resource
+Create IngressClass:
+
+yaml
+apiVersion: networking.k8s.io/v1
+kind: IngressClass
+metadata:
+  name: alb
+spec:
+  controller: ingress.k8s.aws/alb
+bash
+kubectl apply -f alb-ingressclass.yaml
+Apply Spinnaker ingress:
+
+yaml
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -373,24 +424,31 @@ spec:
             name: spin-gate
             port:
               number: 8084
-```
-
-```bash
+bash
 kubectl apply -f spinnaker-ingress.yaml
-```
+Verify ALB DNS:
 
-### 3. Update Halyard for ALB
+bash
+kubectl describe ingress spinnaker-ingress -n spinnaker
+Phase 5: Update Spinnaker URLs
+Export ALB URL:
 
-```bash
+bash
 export ALB_URL=$(kubectl get ingress spinnaker-ingress -n spinnaker \
   -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+Update Halyard:
 
+bash
 hal config security ui edit --override-base-url http://$ALB_URL
 hal config security api edit --override-base-url http://$ALB_URL/api/v1
+Redeploy:
 
+bash
 hal deploy apply
-```
+Phase 6: Access Spinnaker
+Browser: http://<ALB-DNS-NAME>
 
+API: http://<ALB-DNS-NAME>/api/v1
 ---
 
 ## Option C: Classic / Network LoadBalancer (Balanced)
