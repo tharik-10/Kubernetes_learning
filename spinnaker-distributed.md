@@ -78,9 +78,61 @@ kubectl get nodes
 ```
 
 ---
+## 🛠️ Phase 2: Java & Halyard Installation (MANDATORY)
 
-## 🛠️ Phase 2: Halyard & Spinnaker Deployment
+Spinnaker is deployed and managed by the **Halyard daemon**, which **requires Java 17**.
 
+---
+
+### 1. Install Java 17
+
+```bash
+sudo apt update
+sudo apt install -y openjdk-17-jdk
+```
+
+Set Java 17 as default:
+
+```bash
+sudo update-alternatives --config java
+```
+
+Verify:
+
+```bash
+java -version
+```
+
+Expected output:
+
+```
+openjdk version "17"
+```
+
+---
+
+### 2. Install Halyard
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/spinnaker/halyard/master/install/debian/InstallHalyard.sh | sudo bash
+```
+
+This will:
+
+* Create the `spinnaker` user
+* Install the `hal` CLI
+* Create and start the `halyard` systemd service
+
+Verify installation:
+
+```bash
+which hal
+sudo systemctl status halyard
+id spinnaker
+```
+
+---
+## 🛠️ Phase 3: Halyard & Spinnaker Configuration
 Spinnaker is deployed and managed by the **Halyard daemon**.
 
 ---
@@ -331,4 +383,220 @@ hal &
 
 🎯 **You now have a fully functional Spinnaker deployment on Amazon EKS!**
 
+# 🚀 Spinnaker on Amazon EKS – Step-by-Step Deployment Guide
+
+This document provides a **complete, production-ready guide** to install and access **Spinnaker on Amazon EKS** using **Halyard**. It is structured into clear phases for ease of understanding and troubleshooting.
+
+---
+
+## 🏗️ Phase 1: Cluster & CLI Setup
+
+This phase prepares your management machine and provisions the EKS cluster.
+
+---
+
+### 1. Install Required Tools
+
+```bash
+# Update system and install dependencies
+sudo apt update && sudo apt install -y docker.io unzip curl gnupg lsb-release
+
+# Install AWS CLI v2
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip && sudo ./aws/install
+
+# Install kubectl
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+
+# Install eksctl
+curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
+sudo mv /tmp/eksctl /usr/local/bin/eksctl
+```
+
+Verify installations:
+
+```bash
+aws --version
+kubectl version --client
+eksctl version
+```
+
+---
+
+### 2. AWS Authentication
+
+#### Option A: IAM Role (Recommended)
+
+Attach an IAM Role with **AdministratorAccess** to your EC2 instance:
+
+```
+EC2 → Actions → Security → Modify IAM Role
+```
+
+#### Option B: Access Keys
+
+```bash
+aws configure
+# Enter Access Key, Secret Key, and default region (e.g., us-east-1)
+```
+
+---
+
+### 3. Create the EKS Cluster
+
+```bash
+eksctl create cluster \
+  --name spin-cluster \
+  --region us-east-1 \
+  --nodegroup-name standard-nodes \
+  --node-type t3.xlarge \
+  --nodes 3 \
+  --with-oidc \
+  --managed
+```
+
+Validate cluster access:
+
+```bash
+kubectl get nodes
+```
+
+---
+
+## 🛠️ Phase 2: Java & Halyard Installation (MANDATORY)
+
+Spinnaker is deployed and managed by the **Halyard daemon**, which **requires Java 17**.
+
+---
+
+### 1. Install Java 17
+
+```bash
+sudo apt update
+sudo apt install -y openjdk-17-jdk
+```
+
+Set Java 17 as default:
+
+```bash
+sudo update-alternatives --config java
+```
+
+Verify:
+
+```bash
+java -version
+```
+
+Expected output:
+
+```
+openjdk version "17"
+```
+
+---
+
+### 2. Install Halyard
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/spinnaker/halyard/master/install/debian/InstallHalyard.sh | sudo bash
+```
+
+This will:
+
+* Create the `spinnaker` user
+* Install the `hal` CLI
+* Create and start the `halyard` systemd service
+
+Verify installation:
+
+```bash
+which hal
+sudo systemctl status halyard
+id spinnaker
+```
+
+---
+
+## 🛠️ Phase 3: Halyard & Spinnaker Configuration
+
+---
+
+### 1. Fix Permissions for Halyard
+
+Halyard runs as the `spinnaker` user and needs access to Kubernetes and AWS credentials.
+
+```bash
+sudo mkdir -p /home/spinnaker/.kube /home/spinnaker/.aws
+
+sudo cp ~/.kube/config /home/spinnaker/.kube/config
+sudo cp -r ~/.aws/* /home/spinnaker/.aws/
+
+sudo chown -R spinnaker:spinnaker /home/spinnaker/.kube /home/spinnaker/.aws
+sudo chmod 600 /home/spinnaker/.kube/config /home/spinnaker/.aws/credentials
+
+sudo systemctl restart halyard && sleep 15
+```
+
+---
+
+### 2. Configure Kubernetes Provider (Distributed Deployment)
+
+```bash
+hal config provider kubernetes enable
+
+hal config provider kubernetes account add my-k8s-account \
+  --context $(kubectl config current-context) \
+  --kubeconfig-file /home/spinnaker/.kube/config
+
+hal config deploy edit \
+  --type distributed \
+  --account-name my-k8s-account
+```
+
+> ⚠️ **Important**: `distributed` is mandatory for EKS/Kubernetes deployments. Do **not** use `localdebian`.
+
+---
+
+### 3. Deploy Spinnaker
+
+```bash
+hal config version edit --version 2025.0.1
+hal deploy apply
+```
+
+Monitor deployment:
+
+```bash
+kubectl get pods -n spinnaker
+```
+
+---
+
+## 🌐 Phase 4: Accessing Spinnaker
+
+(Access methods remain unchanged: NodePort, ALB Ingress, or LoadBalancer)
+
+---
+
+## 🔍 Phase 5: Troubleshooting Common Issues
+
+| Issue                           | Cause                 | Fix               |
+| ------------------------------- | --------------------- | ----------------- |
+| `UnsupportedClassVersionError`  | Java 11 installed     | Install Java 17   |
+| `hal: command not found`        | Halyard not installed | Reinstall Halyard |
+| `chown: invalid user spinnaker` | Halyard missing       | Install Halyard   |
+| UI spins forever                | SG / CORS issue       | Fix ports & CORS  |
+
+---
+
+## ✅ Final Notes
+
+* Java **17 is mandatory** for modern Spinnaker
+* NodePort → learning & demos
+* ALB Ingress → production-grade
+* Always validate **IAM**, **RBAC**, and **Security Groups**
+
+🎯 **You now have a complete, correct, and production-ready Spinnaker on EKS guide.**
 
