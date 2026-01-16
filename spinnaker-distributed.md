@@ -158,6 +158,49 @@ sudo service halyard restart && sleep 15
 ```
 
 ---
+### 🛠️ Fix: Halyard Cannot Write to `/home/spinnaker/.hal/config`
+
+If you see errors like:
+
+```
+ERROR Failure writing your halconfig to path "/home/spinnaker/.hal/config"
+Status: 409
+```
+
+Follow **these exact steps**:
+
+```bash
+# Stop halyard
+sudo systemctl stop halyard
+
+# Ensure .hal directory exists and fix ownership
+sudo mkdir -p /home/spinnaker/.hal
+sudo chown -R spinnaker:spinnaker /home/spinnaker
+sudo chmod -R 755 /home/spinnaker
+
+# Verify ownership
+ls -ld /home/spinnaker/.hal
+```
+
+Expected owner:
+
+```
+spinnaker spinnaker
+```
+
+Restart Halyard:
+
+```bash
+sudo systemctl start halyard
+sleep 10
+sudo systemctl status halyard
+```
+
+Validation check:
+
+```bash
+sudo -u spinnaker touch /home/spinnaker/.hal/test
+```
 
 ### 2. Configure Kubernetes Provider (Distributed Deployment)
 
@@ -582,21 +625,69 @@ kubectl get pods -n spinnaker
 
 ## 🔍 Phase 5: Troubleshooting Common Issues
 
-| Issue                           | Cause                 | Fix               |
-| ------------------------------- | --------------------- | ----------------- |
-| `UnsupportedClassVersionError`  | Java 11 installed     | Install Java 17   |
-| `hal: command not found`        | Halyard not installed | Reinstall Halyard |
-| `chown: invalid user spinnaker` | Halyard missing       | Install Halyard   |
-| UI spins forever                | SG / CORS issue       | Fix ports & CORS  |
+| Issue                                                                      | Cause                          | Fix                                        |
+| -------------------------------------------------------------------------- | ------------------------------ | ------------------------------------------ |
+| `UnsupportedClassVersionError`                                             | Java 11 installed              | Install Java 17 and set it as default      |
+| `hal: command not found`                                                   | Halyard not installed          | Install Halyard using the official script  |
+| `chown: invalid user spinnaker`                                            | Halyard not installed          | Install Halyard (creates spinnaker user)   |
+| `ERROR Failure writing your halconfig to path /home/spinnaker/.hal/config` | `.hal` directory owned by root | Fix ownership of `/home/spinnaker/.hal`    |
+| HTTP 409 while enabling Kubernetes provider                                | Halyard cannot write config    | Fix `.hal` permissions and restart Halyard |
+| UI spins forever                                                           | Security Group / CORS issue    | Open Gate port & fix CORS                  |
 
 ---
 
-## ✅ Final Notes
+### 🛠️ Fix: Halyard Cannot Write to `/home/spinnaker/.hal/config`
 
-* Java **17 is mandatory** for modern Spinnaker
-* NodePort → learning & demos
-* ALB Ingress → production-grade
-* Always validate **IAM**, **RBAC**, and **Security Groups**
+If you see errors like:
+
+```
+ERROR Failure writing your halconfig to path "/home/spinnaker/.hal/config"
+Status: 409
+```
+
+Follow **these exact steps**:
+
+```bash
+# Stop halyard
+sudo systemctl stop halyard
+
+# Ensure .hal directory exists and fix ownership
+sudo mkdir -p /home/spinnaker/.hal
+sudo chown -R spinnaker:spinnaker /home/spinnaker
+sudo chmod -R 755 /home/spinnaker
+
+# Verify ownership
+ls -ld /home/spinnaker/.hal
+```
+
+Expected owner:
+
+```
+spinnaker spinnaker
+```
+
+Restart Halyard:
+
+```bash
+sudo systemctl start halyard
+sleep 10
+sudo systemctl status halyard
+```
+
+Validation check:
+
+```bash
+sudo -u spinnaker touch /home/spinnaker/.hal/test
+```
+
+If this succeeds, retry:
+
+```bash
+hal config provider kubernetes enable
+```
+
+---
 
 🎯 **You now have a complete, correct, and production-ready Spinnaker on EKS guide.**
+
 
