@@ -78,6 +78,7 @@ kubectl get nodes
 ```
 
 ---
+
 ## 🛠️ Phase 2: Java & Halyard Installation (MANDATORY)
 
 Spinnaker is deployed and managed by the **Halyard daemon**, which **requires Java 17**.
@@ -132,7 +133,9 @@ id spinnaker
 ```
 
 ---
+
 ## 🛠️ Phase 3: Halyard & Spinnaker Configuration
+
 Spinnaker is deployed and managed by the **Halyard daemon**.
 
 ---
@@ -158,6 +161,7 @@ sudo service halyard restart && sleep 15
 ```
 
 ---
+
 ### 🛠️ Fix: Halyard Cannot Write to `/home/spinnaker/.hal/config`
 
 If you see errors like:
@@ -202,6 +206,8 @@ Validation check:
 sudo -u spinnaker touch /home/spinnaker/.hal/test
 ```
 
+---
+
 ### 2. Configure Kubernetes Provider (Distributed Deployment)
 
 ```bash
@@ -219,43 +225,55 @@ hal config deploy edit \
 > ⚠️ **Important**: `distributed` is mandatory for EKS/Kubernetes deployments. Do **not** use `localdebian` on EKS.
 
 ---
-Step 1: Create an S3 Bucket for Spinnaker
+
+### 3. Step 1: Create an S3 Bucket for Spinnaker
 
 Create a globally unique bucket:
 
+```
 aws s3 mb s3://spin-cluster-spinnaker-data --region us-east-1
-
+```
 
 Verify:
 
+```
 aws s3 ls | grep spin-cluster-spinnaker-data
+```
 
-Step 3: Configure S3 Storage in Halyard
+---
+
+### Step 3: Configure S3 Storage in Halyard
 
 Run as the ubuntu user (not root):
 
+```
 hal config storage s3 edit \
   --bucket spin-cluster-spinnaker-data \
   --region us-east-1
-
+```
 
 Enable S3 as the storage backend:
 
+```
 hal config storage edit --type s3
-
+```
 
 Verify configuration:
 
-hal config storage s3 
-
+```
+hal config storage s3
+```
 
 Expected output should show:
 
+```
 bucket: spin-cluster-spinnaker-data
 region: us-east-1
+```
 
+---
 
-### 3. Deploy Spinnaker
+### 4. Deploy Spinnaker
 
 ```bash
 hal config version edit --version 2025.0.1
@@ -270,7 +288,7 @@ kubectl get pods -n spinnaker
 
 ---
 
-## 🌐 Phase 3: Accessing Spinnaker
+## 🌐 Phase 4: Accessing Spinnaker
 
 Choose **ONE** access method.
 
@@ -324,26 +342,31 @@ hal deploy apply
 
 ---
 
-Phase 3: ALB Ingress Setup
+## Phase 5: ALB Ingress Setup
+
 Install cert-manager:
 
-bash
+```bash
 kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.13.3/cert-manager.yaml
+```
+
 Create IAM Policy (skip if already exists):
 
-bash
+```bash
 curl -o iam_policy.json \
 https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.6.2/docs/install/iam_policy.json
 
 aws iam create-policy \
   --policy-name AWSLoadBalancerControllerIAMPolicy \
   --policy-document file://iam_policy.json
-Create IAM Role with Trust Policy  
+```
+
+Create IAM Role with Trust Policy
 Use your cluster’s OIDC provider ID (58BEEF23A3B700AA3C2D19DCB86F4D57):
 
 trust-policy.json:
 
-json
+```json
 {
   "Version": "2012-10-17",
   "Statement": [
@@ -361,42 +384,59 @@ json
     }
   ]
 }
+```
+
 Create role:
 
-bash
+```bash
 aws iam create-role \
   --role-name AmazonEKSLoadBalancerControllerRole \
   --assume-role-policy-document file://trust-policy.json
+```
+
 Attach policy:
 
-bash
+```bash
 aws iam attach-role-policy \
   --role-name AmazonEKSLoadBalancerControllerRole \
   --policy-arn arn:aws:iam::574621078554:policy/AWSLoadBalancerControllerIAMPolicy
+```
+
 Annotate Service Account:
 
-bash
+```bash
 kubectl annotate serviceaccount aws-load-balancer-controller \
   -n kube-system eks.amazonaws.com/role-arn=arn:aws:iam::574621078554:role/AmazonEKSLoadBalancerControllerRole --overwrite
+```
+
 Restart ALB Controller:
 
-bash
+```bash
 kubectl rollout restart deployment aws-load-balancer-controller -n kube-system
-Phase 4: Ingress Resource
+```
+
+---
+
+## Phase 6: Ingress Resource
+
 Create IngressClass:
 
-yaml
+```yaml
 apiVersion: networking.k8s.io/v1
 kind: IngressClass
 metadata:
   name: alb
 spec:
   controller: ingress.k8s.aws/alb
-bash
+```
+
+```bash
 kubectl apply -f alb-ingressclass.yaml
+```
+
 Apply Spinnaker ingress:
 
-yaml
+```yaml
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -424,37 +464,57 @@ spec:
             name: spin-gate
             port:
               number: 8084
-bash
+```
+
+```bash
 kubectl apply -f spinnaker-ingress.yaml
+```
+
 Verify ALB DNS:
 
-bash
+```bash
 kubectl describe ingress spinnaker-ingress -n spinnaker
-Phase 5: Update Spinnaker URLs
+```
+
+---
+
+## Phase 7: Update Spinnaker URLs
+
 Export ALB URL:
 
-bash
+```bash
 export ALB_URL=$(kubectl get ingress spinnaker-ingress -n spinnaker \
   -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+```
+
 Update Halyard:
 
-bash
+```bash
 hal config security ui edit --override-base-url http://$ALB_URL
 hal config security api edit --override-base-url http://$ALB_URL/api/v1
+```
+
 Enable CORS (MANDATORY)
+
+```bash
 hal config security api edit \
   --cors-access-pattern $ALB
+```
 
-
-✅ This allows the browser UI → Gate API calls.
 Redeploy:
 
-bash
+```bash
 hal deploy apply
-Phase 6: Access Spinnaker
+```
+
+---
+
+## Phase 8: Access Spinnaker
+
 Browser: http://<ALB-DNS-NAME>
 
 API: http://<ALB-DNS-NAME>/api/v1
+
 ---
 
 ## Option C: Classic / Network LoadBalancer (Balanced)
@@ -487,7 +547,7 @@ hal deploy apply
 
 ---
 
-## 🔍 Phase 4: Troubleshooting Common Issues
+## 🔍 Phase 9: Troubleshooting Common Issues
 
 | Issue                       | Cause                  | Fix                                         |
 | --------------------------- | ---------------------- | ------------------------------------------- |
@@ -524,4 +584,3 @@ hal &
 ---
 
 🎯 **You now have a fully functional Spinnaker deployment on Amazon EKS!**
-
