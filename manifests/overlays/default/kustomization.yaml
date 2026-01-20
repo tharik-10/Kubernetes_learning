@@ -1,41 +1,5 @@
-resources:
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+bases:
   - ../../base
-
-configMapGenerator:
-  - name: app-params
-    envs:
-      - parameter.env
-
-vars:
-  - name: APP_NAME
-    objref:
-      kind: ConfigMap
-      name: app-params
-      apiVersion: v1
-    fieldref:
-      fieldpath: data.APP_NAME
-
-  - name: NAMESPACE
-    objref:
-      kind: ConfigMap
-      name: app-params
-      apiVersion: v1
-    fieldref:
-      fieldpath: data.NAMESPACE
-
-  - name: IMAGE
-    objref:
-      kind: ConfigMap
-      name: app-params
-      apiVersion: v1
-    fieldref:
-      fieldpath: data.IMAGE
-
-  - name: REPLICAS
-    objref:
-      kind: ConfigMap
-      name: app-params
-      apiVersion: v1
-    fieldref:
-      fieldpath: data.REPLICAS
-
