@@ -1,6 +1,3 @@
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-
 resources:
   - ../../base
 
@@ -42,24 +39,3 @@ vars:
     fieldref:
       fieldpath: data.REPLICAS
 
-  - name: SERVICE_PORT
-    objref:
-      kind: ConfigMap
-      name: app-params
-      apiVersion: v1
-    fieldref:
-      fieldpath: data.SERVICE_PORT
-
-  - name: READINESS_PATH
-    objref:
-      kind: ConfigMap
-      name: app-params
-    fieldref:
-      fieldpath: data.READINESS_PATH
-
-  - name: LIVENESS_PATH
-    objref:
-      kind: ConfigMap
-      name: app-params
-    fieldref:
-      fieldpath: data.LIVENESS_PATH
