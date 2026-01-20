@@ -4,6 +4,96 @@ kind: Kustomization
 resources:
   - deployment.yaml
   - service.yaml
+  - configmap-vars.yaml
+
+vars:
+  - name: APP_NAME
+    objref:
+      kind: ConfigMap
+      name: app-vars
+      apiVersion: v1
+    fieldref:
+      fieldpath: data.APP_NAME
+
+  - name: NAMESPACE
+    objref:
+      kind: ConfigMap
+      name: app-vars
+      apiVersion: v1
+    fieldref:
+      fieldpath: data.NAMESPACE
+
+  - name: IMAGE
+    objref:
+      kind: ConfigMap
+      name: app-vars
+      apiVersion: v1
+    fieldref:
+      fieldpath: data.IMAGE
+
+  - name: REPLICAS
+    objref:
+      kind: ConfigMap
+      name: app-vars
+      apiVersion: v1
+    fieldref:
+      fieldpath: data.REPLICAS
+
+  - name: SERVICE_PORT
+    objref:
+      kind: ConfigMap
+      name: app-vars
+      apiVersion: v1
+    fieldref:
+      fieldpath: data.SERVICE_PORT
+
+  - name: REQ_CPU
+    objref:
+      kind: ConfigMap
+      name: app-vars
+      apiVersion: v1
+    fieldref:
+      fieldpath: data.REQ_CPU
+
+  - name: REQ_MEM
+    objref:
+      kind: ConfigMap
+      name: app-vars
+      apiVersion: v1
+    fieldref:
+      fieldpath: data.REQ_MEM
+
+  - name: LIM_CPU
+    objref:
+      kind: ConfigMap
+      name: app-vars
+      apiVersion: v1
+    fieldref:
+      fieldpath: data.LIM_CPU
+
+  - name: LIM_MEM
+    objref:
+      kind: ConfigMap
+      name: app-vars
+      apiVersion: v1
+    fieldref:
+      fieldpath: data.LIM_MEM
+
+  - name: READINESS_PATH
+    objref:
+      kind: ConfigMap
+      name: app-vars
+      apiVersion: v1
+    fieldref:
+      fieldpath: data.READINESS_PATH
+
+  - name: LIVENESS_PATH
+    objref:
+      kind: ConfigMap
+      name: app-vars
+      apiVersion: v1
+    fieldref:
+      fieldpath: data.LIVENESS_PATH
 
 configurations:
   - kustomizeconfig.yaml
