@@ -1,0 +1,11 @@
+varReference:
+  - path: metadata/name
+  - path: metadata/namespace
+  - path: spec/replicas
+  - path: spec/template/spec/containers/image
+  - path: spec/template/spec/containers/resources/requests/cpu
+  - path: spec/template/spec/containers/resources/requests/memory
+  - path: spec/template/spec/containers/resources/limits/cpu
+  - path: spec/template/spec/containers/resources/limits/memory
+  - path: spec/template/spec/containers/readinessProbe/httpGet/path
+  - path: spec/template/spec/containers/livenessProbe/httpGet/path
