@@ -25,15 +25,4 @@ spec:
           limits:
             cpu: $(LIM_CPU)
             memory: $(LIM_MEM)
-        readinessProbe:
-          httpGet:
-            path: $(READINESS_PATH)
-            port: $(SERVICE_PORT)
-          initialDelaySeconds: $(READINESS_DELAY)
-          periodSeconds: $(READINESS_PERIOD)
-        livenessProbe:
-          httpGet:
-            path: $(LIVENESS_PATH)
-            port: $(SERVICE_PORT)
-          initialDelaySeconds: $(LIVENESS_DELAY)
-          periodSeconds: $(LIVENESS_PERIOD)
+
