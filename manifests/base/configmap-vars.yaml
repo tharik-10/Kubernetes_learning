@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-vars
+data:
+  APP_NAME: nginx-app
+  NAMESPACE: default
+  IMAGE: nginx:1.25
+  REPLICAS: "2"
+
+  SERVICE_PORT: "80"
+
+  REQ_CPU: "100m"
+  REQ_MEM: "128Mi"
+  LIM_CPU: "200m"
+  LIM_MEM: "256Mi"
+
+  READINESS_PATH: "/"
+  LIVENESS_PATH: "/"
