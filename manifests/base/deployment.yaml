@@ -14,15 +14,29 @@ spec:
         app: $(APP_NAME)
     spec:
       containers:
-      - name: $(APP_NAME)
-        image: $(IMAGE)
-        ports:
-        - containerPort: $(SERVICE_PORT)
-        resources:
-          requests:
-            cpu: $(REQ_CPU)
-            memory: $(REQ_MEM)
-          limits:
-            cpu: $(LIM_CPU)
-            memory: $(LIM_MEM)
+        - name: $(APP_NAME)
+          image: $(IMAGE)
+          ports:
+            - containerPort: $(SERVICE_PORT)
 
+          resources:
+            requests:
+              cpu: $(REQ_CPU)
+              memory: $(REQ_MEM)
+            limits:
+              cpu: $(LIM_CPU)
+              memory: $(LIM_MEM)
+
+          readinessProbe:
+            httpGet:
+              path: $(READINESS_PATH)
+              port: $(SERVICE_PORT)
+            initialDelaySeconds: 5
+            periodSeconds: 10
+
+          livenessProbe:
+            httpGet:
+              path: $(LIVENESS_PATH)
+              port: $(SERVICE_PORT)
+            initialDelaySeconds: 10
+            periodSeconds: 20
