@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: $(APP_NAME)
+  namespace: $(NAMESPACE)
+spec:
+  replicas: $(REPLICAS)
+  selector:
+    matchLabels:
+      app: $(APP_NAME)
+  template:
+    metadata:
+      labels:
+        app: $(APP_NAME)
+    spec:
+      containers:
+      - name: $(APP_NAME)
+        image: $(IMAGE)
+        ports:
+        - containerPort: $(SERVICE_PORT)
+        resources:
+          requests:
+            cpu: $(REQ_CPU)
+            memory: $(REQ_MEM)
+          limits:
+            cpu: $(LIM_CPU)
+            memory: $(LIM_MEM)
+        readinessProbe:
+          httpGet:
+            path: $(READINESS_PATH)
+            port: $(SERVICE_PORT)
+          initialDelaySeconds: $(READINESS_DELAY)
+          periodSeconds: $(READINESS_PERIOD)
+        livenessProbe:
+          httpGet:
+            path: $(LIVENESS_PATH)
+            port: $(SERVICE_PORT)
+          initialDelaySeconds: $(LIVENESS_DELAY)
+          periodSeconds: $(LIVENESS_PERIOD)
