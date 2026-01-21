@@ -2,8 +2,6 @@ varReference:
   - path: metadata/name
   - path: metadata/namespace
 
-  - path: spec/replicas
-
   - path: spec/selector/matchLabels/app
   - path: spec/template/metadata/labels/app
 
