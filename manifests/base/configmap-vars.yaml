@@ -6,7 +6,6 @@ data:
   APP_NAME: nginx-app
   NAMESPACE: default
   IMAGE: nginx:1.25
-  REPLICAS: "2"
 
   REQ_CPU: "100m"
   REQ_MEM: "128Mi"
