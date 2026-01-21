@@ -31,14 +31,6 @@ vars:
     fieldref:
       fieldpath: data.IMAGE
 
-  - name: REPLICAS
-    objref:
-      kind: ConfigMap
-      name: app-vars
-      apiVersion: v1
-    fieldref:
-      fieldpath: data.REPLICAS
-
   - name: REQ_CPU
     objref:
       kind: ConfigMap
