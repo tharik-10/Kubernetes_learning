@@ -39,14 +39,6 @@ vars:
     fieldref:
       fieldpath: data.REPLICAS
 
-  - name: SERVICE_PORT
-    objref:
-      kind: ConfigMap
-      name: app-vars
-      apiVersion: v1
-    fieldref:
-      fieldpath: data.SERVICE_PORT
-
   - name: REQ_CPU
     objref:
       kind: ConfigMap
