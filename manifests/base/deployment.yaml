@@ -23,18 +23,15 @@ spec:
             limits:
               cpu: ${CPU_LIMIT}
               memory: ${MEMORY_LIMIT}
-
           readinessProbe:
             httpGet:
-              path: $(READINESS_PATH)
+              path: ${READINESS_PATH}
               port: http
             initialDelaySeconds: 5
             periodSeconds: 10
-
           livenessProbe:
             httpGet:
-              path: $(LIVENESS_PATH)
+              path: ${LIVENESS_PATH}
               port: http
-            initialDelaySeconds: 10
+            initialDelaySeconds: 15
             periodSeconds: 20
-
