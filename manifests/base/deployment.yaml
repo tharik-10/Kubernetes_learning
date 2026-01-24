@@ -1,33 +1,28 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: $(APP_NAME)
-  namespace: $(NAMESPACE)
+  name: ${APP_NAME}
+  namespace: ${NAMESPACE}
 spec:
-  replicas: 2
+  replicas: ${REPLICAS}
   selector:
     matchLabels:
-      app: $(APP_NAME)
+      app: ${APP_NAME}
   template:
     metadata:
       labels:
-        app: $(APP_NAME)
+        app: ${APP_NAME}
     spec:
       containers:
-        - name: $(APP_NAME)
-          image: $(IMAGE)
-
-          ports:
-            - name: http
-              containerPort: 80
-
+        - name: ${APP_NAME}
+          image: ${IMAGE}
           resources:
             requests:
-              cpu: $(REQ_CPU)
-              memory: $(REQ_MEM)
+              cpu: ${CPU_REQUEST}
+              memory: ${MEMORY_REQUEST}
             limits:
-              cpu: $(LIM_CPU)
-              memory: $(LIM_MEM)
+              cpu: ${CPU_LIMIT}
+              memory: ${MEMORY_LIMIT}
 
           readinessProbe:
             httpGet:
