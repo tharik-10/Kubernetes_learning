@@ -26,12 +26,12 @@ spec:
           readinessProbe:
             httpGet:
               path: ${READINESS_PATH}
-              port: http
+              port: 80
             initialDelaySeconds: 5
             periodSeconds: 10
           livenessProbe:
             httpGet:
               path: ${LIVENESS_PATH}
-              port: http
+              port: 80
             initialDelaySeconds: 15
             periodSeconds: 20
