@@ -3,10 +3,14 @@ namespace: default
 replicas: 2
 image: nginx:latest
 
-cpuRequest: 100m
-memoryRequest: 128Mi
-cpuLimit: 200m
-memoryLimit: 256Mi
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi
 
+enableProbes: true
 readinessPath: /
-livenessPath: /
+livenessPath: /health
