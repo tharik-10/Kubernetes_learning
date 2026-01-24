@@ -80,6 +80,6 @@ resources:
 #    fieldref:
 #      fieldpath: data.LIVENESS_PATH
 
-configurations:
-  - kustomizeconfig.yaml
+#configurations:
+#  - kustomizeconfig.yaml
 
